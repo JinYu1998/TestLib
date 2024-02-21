@@ -27,6 +27,7 @@ public class AudioEncoder: AudioEncoding, WhisperMLModel {
         guard inputDescription.type == .multiArray else { return nil }
         guard let shapeConstraint = inputDescription.multiArrayConstraint else { return nil }
         let shape = shapeConstraint.shape.map { $0.intValue }
+        print("shape[1] is \(shape[1])")
         return shape[1]
     }
 
@@ -50,7 +51,8 @@ public class AudioEncoder: AudioEncoding, WhisperMLModel {
 
         try Task.checkCancellation()
 
-        let outputFeatures = try await model.prediction(from: modelInputs, options: MLPredictionOptions())
+//        let outputFeatures = try await model.prediction(from: modelInputs, options: MLPredictionOptions())
+        let outputFeatures = try model.prediction(from: modelInputs, options: MLPredictionOptions())
 
         let output = AudioEncoderOutput(features: outputFeatures)
 
@@ -58,4 +60,5 @@ public class AudioEncoder: AudioEncoding, WhisperMLModel {
 
         return encodedFeatures
     }
+    
 }

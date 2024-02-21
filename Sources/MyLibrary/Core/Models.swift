@@ -10,7 +10,7 @@ import Hub
 import Tokenizers
 
 #if os(watchOS) || arch(arm64)
-@available(macOS 14, iOS 16, watchOS 10, visionOS 1, *)
+    @available(macOS 14, iOS 16, watchOS 10, visionOS 1, *)
     public typealias FloatType = Float16
 #else
     public typealias FloatType = Float
@@ -133,8 +133,10 @@ public struct ModelComputeOptions {
 
     public init(
         melCompute: MLComputeUnits = .cpuAndGPU,
-        audioEncoderCompute: MLComputeUnits = .cpuAndNeuralEngine,
-        textDecoderCompute: MLComputeUnits = .cpuAndNeuralEngine,
+        audioEncoderCompute: MLComputeUnits = .cpuAndGPU,
+        textDecoderCompute: MLComputeUnits = .cpuAndGPU,
+//        audioEncoderCompute: MLComputeUnits = .cpuAndNeuralEngine,
+//        textDecoderCompute: MLComputeUnits = .cpuAndNeuralEngine,
         prefillCompute: MLComputeUnits = .cpuOnly
     ) {
         self.melCompute = melCompute

@@ -172,7 +172,7 @@ public extension TextDecoding {
 
         try Task.checkCancellation()
 
-        let outputFeatures = try await prefillModel.prediction(from: modelInputs, options: MLPredictionOptions())
+        let outputFeatures = try prefillModel.prediction(from: modelInputs, options: MLPredictionOptions())
 
         let output = TextDecoderCachePrefillOutput(features: outputFeatures)
 
@@ -283,8 +283,9 @@ public class TextDecoder: TextDecoding, WhisperMLModel {
         }
 
         try Task.checkCancellation()
-
-        let outputFeatures = try await model.prediction(from: modelInputs, options: MLPredictionOptions())
+        
+        // let outputFeatures = try await model.prediction(from: modelInputs, options: MLPredictionOptions())
+        let outputFeatures = try model.prediction(from: modelInputs, options: MLPredictionOptions())
 
         let output = TextDecoderOutput(features: outputFeatures)
 

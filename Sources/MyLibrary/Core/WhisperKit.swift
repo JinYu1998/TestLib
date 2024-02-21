@@ -72,130 +72,20 @@ public class WhisperKit {
         Logging.shared.logLevel = verbose ? logLevel : .none
         currentTimings = TranscriptionTimings()
 
-        try await setupModels(model: model, modelRepo: modelRepo, modelFolder: modelFolder, download: download)
-
+        self.modelFolder = URL(fileURLWithPath: modelFolder!)
+        
+        print("download is \(download)")
         if let prewarm = prewarm, prewarm {
             Logging.info("Prewarming models...")
             try await prewarmModels()
         }
-
-        // If load is not passed in, load based on whether a modelFolder is passed
-        if load ?? (modelFolder != nil) {
-            Logging.info("Loading models...")
-            try await loadModels()
-        }
+        
+        try await loadModels()
     }
+
 
     // MARK: - Model Loading
 
-    public static func recommendedModels() -> (default: String, disabled: [String]) {
-        let deviceName = Self.deviceName()
-        Logging.debug("Running on \(deviceName)")
-
-        let defaultModel = modelSupport(for: deviceName).default
-        let disabledModels = modelSupport(for: deviceName).disabled
-        return (defaultModel, disabledModels)
-    }
-
-    public static func deviceName() -> String {
-        var utsname = utsname()
-        uname(&utsname)
-        let deviceName = withUnsafePointer(to: &utsname.machine) {
-            $0.withMemoryRebound(to: CChar.self, capacity: Int(_SYS_NAMELEN)) {
-                String(cString: $0)
-            }
-        }
-        return deviceName
-    }
-
-    public static func fetchAvailableModels(from repo: String = "argmaxinc/whisperkit-coreml") async throws -> [String] {
-        let hubApi = HubApi()
-        // TODO: get config from the source repo
-        _ = try await hubApi.httpGet(for: URL(string: "https://huggingface.co/argmaxinc/whisperkit-coreml/blob/main/config.json")!)
-        let modelFiles = try await hubApi.getFilenames(from: repo, matching: ["openai_whisper*"])
-
-        return formatModelFiles(modelFiles)
-    }
-
-    public static func formatModelFiles(_ modelFiles: [String]) -> [String] {
-        let modelFilters = ModelVariant.allCases.map { "\($0.description)\($0.description.contains("large") ? "" : "/")" } // Include quantized models for large
-        let modelVariants = modelFiles.map { $0.components(separatedBy: "/")[0] + "/" }
-        let filteredVariants = Set(modelVariants.filter { item in
-            let count = modelFilters.reduce(0) { count, filter in
-                let isContained = item.contains(filter) ? 1 : 0
-                return count + isContained
-            }
-            return count > 0
-        })
-
-        let availableModels = filteredVariants.map { variant -> String in
-            let parts = variant.split(separator: "_")
-            let modelInfo = parts[1].split(separator: "-").dropFirst().joined(separator: "-")
-            let additionalInfo = parts.count > 2 ? "_\(parts[2...].joined(separator: "_"))" : ""
-            return (modelInfo + additionalInfo).trimmingFromEnd(character: "/", upto: 1)
-        }
-
-        // Sorting order based on enum
-        let sizeOrder = ModelVariant.allCases.map { $0.description }
-
-        let sortedModels = availableModels.sorted { firstModel, secondModel in
-            // Extract the base size without any additional qualifiers
-            let firstModelBase = sizeOrder.first(where: { firstModel.contains($0) }) ?? ""
-            let secondModelBase = sizeOrder.first(where: { secondModel.contains($0) }) ?? ""
-
-            if firstModelBase == secondModelBase {
-                // If base sizes are the same, sort alphabetically
-                return firstModel < secondModel
-            } else {
-                // Sort based on the size order
-                return sizeOrder.firstIndex(of: firstModelBase) ?? sizeOrder.count
-                    < sizeOrder.firstIndex(of: secondModelBase) ?? sizeOrder.count
-            }
-        }
-
-        return sortedModels
-    }
-
-    public static func download(variant: String, from repo: String = "argmaxinc/whisperkit-coreml", progressCallback: ((Progress) -> Void)? = nil) async throws -> URL? {
-        let hubApi = HubApi()
-        let repo = Hub.Repo(id: repo, type: .models)
-        do {
-            let modelFolder = try await hubApi.snapshot(from: repo, matching: ["*\(variant.description)/*"]) { progress in
-                Logging.debug(progress)
-                progressCallback?(progress)
-            }
-
-            let modelFolderName = modelFolder.appending(path: "openai_whisper-\(variant)")
-            return modelFolderName
-        } catch {
-            Logging.debug(error)
-        }
-
-        return nil
-    }
-
-    /// Sets up the model folder either from a local path or by downloading from a repository.
-    public func setupModels(model: String?, modelRepo: String?, modelFolder: String?, download: Bool) async throws {
-        // Determine the model variant to use
-        let modelVariant = model ?? WhisperKit.recommendedModels().default
-
-        // If a local model folder is provided, use it; otherwise, download the model
-        if let folder = modelFolder {
-            self.modelFolder = URL(fileURLWithPath: folder)
-        } else if download {
-            let repo = modelRepo ?? "argmaxinc/whisperkit-coreml"
-            do {
-                let hubModelFolder = try await Self.download(variant: modelVariant, from: repo)
-                self.modelFolder = hubModelFolder!
-            } catch {
-                // Handle errors related to model downloading
-                throw WhisperError.modelsUnavailable("""
-                Model not found. Please check the model or repo name and try again.
-                Error: \(error)
-                """)
-            }
-        }
-    }
 
     public func prewarmModels() async throws {
         try await loadModels(prewarmMode: true)
@@ -203,20 +93,21 @@ public class WhisperKit {
 
     public func loadModels(prewarmMode: Bool = false) async throws {
         modelState = prewarmMode ? .prewarming : .loading
-
+        
         let modelLoadStart = CFAbsoluteTimeGetCurrent()
-
+        
         guard let path = modelFolder else {
             throw WhisperError.modelsUnavailable("Model folder is not set.")
         }
 
         Logging.debug("Loading models from \(path.path) with prewarmMode: \(prewarmMode)")
-
+        print("Loading models from \(path.path) with prewarmMode: \(prewarmMode)")
+        
         let logmelUrl = path.appending(path: "MelSpectrogram.mlmodelc")
         let encoderUrl = path.appending(path: "AudioEncoder.mlmodelc")
         let decoderUrl = path.appending(path: "TextDecoder.mlmodelc")
         let decoderPrefillUrl = path.appending(path: "TextDecoderContextPrefill.mlmodelc")
-
+        
         try [logmelUrl, encoderUrl, decoderUrl].forEach {
             if !FileManager.default.fileExists(atPath: $0.path) {
                 throw WhisperError.modelsUnavailable("Model file not found at \($0.path)")
@@ -230,19 +121,25 @@ public class WhisperKit {
                 computeUnits: modelCompute.melCompute, // hardcoded to use GPU
                 prewarmMode: prewarmMode
             )
+            print("modelCompute.melCompute is \(modelCompute.melCompute)")
             Logging.debug("Loaded feature extractor")
         }
 
         if var audioEncoder = audioEncoder as? WhisperMLModel {
             Logging.debug("Loading audio encoder")
+            print("audioEncoder : x ------------ ")
             try await audioEncoder.loadModel(
                 at: encoderUrl,
                 computeUnits: modelCompute.audioEncoderCompute,
                 prewarmMode: prewarmMode
             )
+            print("modelCompute.audioEncoderCompute is \(modelCompute.audioEncoderCompute)")
+            print("audioEncoder : y ------------ ")
             Logging.debug("Loaded audio encoder")
         }
+        
 
+        print("888888")
         if var textDecoder = textDecoder as? WhisperMLModel {
             Logging.debug("Loading text decoder")
             try await textDecoder.loadModel(
@@ -250,9 +147,10 @@ public class WhisperKit {
                 computeUnits: modelCompute.textDecoderCompute,
                 prewarmMode: prewarmMode
             )
+            print("modelCompute.textDecoderCompute is \(modelCompute.textDecoderCompute)")
             Logging.debug("Loaded text decoder")
         }
-
+        print("999999")
         if FileManager.default.fileExists(atPath: decoderPrefillUrl.path) {
             Logging.debug("Loading text decoder prefill data")
             textDecoder.prefillData = TextDecoderContextPrefill()
@@ -263,7 +161,7 @@ public class WhisperKit {
             )
             Logging.debug("Loaded text decoder prefill data")
         }
-
+        print("10-10-10-10-10-10")
         if prewarmMode {
             modelState = .prewarmed
             currentTimings?.modelLoading = CFAbsoluteTimeGetCurrent() - modelLoadStart
@@ -282,7 +180,7 @@ public class WhisperKit {
         } else {
             Logging.error("Could not load tokenizer")
         }
-
+        print("11-11-11-11-11-11")
         modelState = .loaded
 
         currentTimings?.modelLoading = CFAbsoluteTimeGetCurrent() - modelLoadStart
@@ -290,19 +188,19 @@ public class WhisperKit {
         Logging.info("Loaded models for whisper size: \(modelVariant)")
     }
 
-    public func unloadModels() async {
-        modelState = .unloading
-
-        [featureExtractor, audioEncoder, textDecoder].forEach { model in
-            if var model = model as? WhisperMLModel {
-                model.unloadModel()
-            }
-        }
-
-        modelState = .unloaded
-
-        Logging.info("Unloaded all models")
-    }
+//    public func unloadModels() async {
+//        modelState = .unloading
+//
+//        [featureExtractor, audioEncoder, textDecoder].forEach { model in
+//            if var model = model as? WhisperMLModel {
+//                model.unloadModel()
+//            }
+//        }
+//
+//        modelState = .unloaded
+//
+//        Logging.info("Unloaded all models")
+//    }
 
     public func clearState() {
         audioProcessor.stopRecording()
