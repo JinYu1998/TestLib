@@ -92,18 +92,130 @@ public class WhisperKit {
 
 
     // MARK: - Model Loading
+    /// --------------------------
 
+    public static func recommendedModels() -> (default: String, disabled: [String]) {
+        let deviceName = Self.deviceName()
+        Logging.debug("Running on \(deviceName)")
 
+        let defaultModel = modelSupport(for: deviceName).default
+        let disabledModels = modelSupport(for: deviceName).disabled
+        return (defaultModel, disabledModels)
+    }
+
+    public static func deviceName() -> String {
+        var utsname = utsname()
+        uname(&utsname)
+        let deviceName = withUnsafePointer(to: &utsname.machine) {
+            $0.withMemoryRebound(to: CChar.self, capacity: Int(_SYS_NAMELEN)) {
+                String(cString: $0)
+            }
+        }
+        return deviceName
+    }
+
+    public static func fetchAvailableModels(from repo: String = "argmaxinc/whisperkit-coreml") async throws -> [String] {
+        let hubApi = HubApi()
+        // TODO: get config from the source repo
+        _ = try await hubApi.httpGet(for: URL(string: "https://huggingface.co/argmaxinc/whisperkit-coreml/blob/main/config.json")!)
+        let modelFiles = try await hubApi.getFilenames(from: repo, matching: ["openai_whisper*"])
+
+        return formatModelFiles(modelFiles)
+    }
+
+    public static func formatModelFiles(_ modelFiles: [String]) -> [String] {
+        let modelFilters = ModelVariant.allCases.map { "\($0.description)\($0.description.contains("large") ? "" : "/")" } // Include quantized models for large
+        let modelVariants = modelFiles.map { $0.components(separatedBy: "/")[0] + "/" }
+        let filteredVariants = Set(modelVariants.filter { item in
+            let count = modelFilters.reduce(0) { count, filter in
+                let isContained = item.contains(filter) ? 1 : 0
+                return count + isContained
+            }
+            return count > 0
+        })
+
+        let availableModels = filteredVariants.map { variant -> String in
+            let parts = variant.split(separator: "_")
+            let modelInfo = parts[1].split(separator: "-").dropFirst().joined(separator: "-")
+            let additionalInfo = parts.count > 2 ? "_\(parts[2...].joined(separator: "_"))" : ""
+            return (modelInfo + additionalInfo).trimmingFromEnd(character: "/", upto: 1)
+        }
+
+        // Sorting order based on enum
+        let sizeOrder = ModelVariant.allCases.map { $0.description }
+
+        let sortedModels = availableModels.sorted { firstModel, secondModel in
+            // Extract the base size without any additional qualifiers
+            let firstModelBase = sizeOrder.first(where: { firstModel.contains($0) }) ?? ""
+            let secondModelBase = sizeOrder.first(where: { secondModel.contains($0) }) ?? ""
+
+            if firstModelBase == secondModelBase {
+                // If base sizes are the same, sort alphabetically
+                return firstModel < secondModel
+            } else {
+                // Sort based on the size order
+                return sizeOrder.firstIndex(of: firstModelBase) ?? sizeOrder.count
+                    < sizeOrder.firstIndex(of: secondModelBase) ?? sizeOrder.count
+            }
+        }
+
+        return sortedModels
+    }
+
+    public static func download(variant: String, from repo: String = "argmaxinc/whisperkit-coreml", progressCallback: ((Progress) -> Void)? = nil) async throws -> URL? {
+        let hubApi = HubApi()
+        let repo = Hub.Repo(id: repo, type: .models)
+        do {
+            let modelFolder = try await hubApi.snapshot(from: repo, matching: ["*\(variant.description)/*"]) { progress in
+                Logging.debug(progress)
+                progressCallback?(progress)
+            }
+
+            let modelFolderName = modelFolder.appending(path: "openai_whisper-\(variant)")
+            return modelFolderName
+        } catch {
+            Logging.debug(error)
+        }
+
+        return nil
+    }
+
+    /// Sets up the model folder either from a local path or by downloading from a repository.
+    public func setupModels(model: String?, modelRepo: String?, modelFolder: String?, download: Bool) async throws {
+        // Determine the model variant to use
+        let modelVariant = model ?? WhisperKit.recommendedModels().default
+
+        // If a local model folder is provided, use it; otherwise, download the model
+        if let folder = modelFolder {
+            self.modelFolder = URL(fileURLWithPath: folder)
+        } else if download {
+            let repo = modelRepo ?? "argmaxinc/whisperkit-coreml"
+            do {
+                let hubModelFolder = try await Self.download(variant: modelVariant, from: repo)
+                self.modelFolder = hubModelFolder!
+            } catch {
+                // Handle errors related to model downloading
+                throw WhisperError.modelsUnavailable("""
+                Model not found. Please check the model or repo name and try again.
+                Error: \(error)
+                """)
+            }
+        }
+    }
+
+    /// --------------------------
+    ///
     public func prewarmModels() async throws {
         try await loadModels(prewarmMode: true)
     }
+
     
     func printComputeLocation(_ computeUnits: Int) {
         switch computeUnits {
         case 0:
-            print("     is running on CPU")
+            print("     is running on CPU Only")
         case 1:
-            print("     is running on CPU and GPU Only")
+            print("     is running on CPU and GPU")
         case 2:
             print("     is running on All hardware")
         case 3:
