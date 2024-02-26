@@ -97,7 +97,23 @@ public class WhisperKit {
     public func prewarmModels() async throws {
         try await loadModels(prewarmMode: true)
     }
+    
+    func printComputeLocation(_ computeUnits: Int) {
+        switch computeUnits {
+        case 0:
+            print("     is running on CPU")
+        case 1:
+            print("     is running on CPU and GPU Only")
+        case 2:
+            print("     is running on All hardware")
+        case 3:
+            print("     is running on CPU and Neural Engine")
+        default:
+            print("Unknown hardware for modelCompute")
+        }
+    }
 
+    
     public func loadModels(prewarmMode: Bool = false) async throws {
         modelState = prewarmMode ? .prewarming : .loading
         
@@ -128,7 +144,9 @@ public class WhisperKit {
                 computeUnits: modelCompute.melCompute, // hardcoded to use GPU
                 prewarmMode: prewarmMode
             )
-            print("modelCompute.melCompute is \(modelCompute.melCompute)")
+            
+            print("modelCompute.melCompute : ")
+            printComputeLocation(modelCompute.melCompute.rawValue)
             Logging.debug("Loaded feature extractor")
         }
 
@@ -139,7 +157,8 @@ public class WhisperKit {
                 computeUnits: modelCompute.audioEncoderCompute,
                 prewarmMode: prewarmMode
             )
-            print("modelCompute.audioEncoderCompute is \(modelCompute.audioEncoderCompute)")
+            print("modelCompute.audioEncoderCompute : ")
+            printComputeLocation(modelCompute.audioEncoderCompute.rawValue)
             Logging.debug("Loaded audio encoder")
         }
         
@@ -151,7 +170,8 @@ public class WhisperKit {
                 computeUnits: modelCompute.textDecoderCompute,
                 prewarmMode: prewarmMode
             )
-            print("modelCompute.textDecoderCompute is \(modelCompute.textDecoderCompute)")
+            print("modelCompute.textDecoderCompute : ")
+            printComputeLocation(modelCompute.textDecoderCompute.rawValue)
             Logging.debug("Loaded text decoder")
         }
 
