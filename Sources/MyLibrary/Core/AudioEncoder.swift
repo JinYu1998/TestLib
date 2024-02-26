@@ -27,7 +27,6 @@ public class AudioEncoder: AudioEncoding, WhisperMLModel {
         guard inputDescription.type == .multiArray else { return nil }
         guard let shapeConstraint = inputDescription.multiArrayConstraint else { return nil }
         let shape = shapeConstraint.shape.map { $0.intValue }
-        print("shape[1] is \(shape[1])")
         return shape[1]
     }
 

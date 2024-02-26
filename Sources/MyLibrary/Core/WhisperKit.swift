@@ -60,7 +60,8 @@ public class WhisperKit {
         logLevel: Logging.LogLevel = .info,
         prewarm: Bool? = nil,
         load: Bool? = nil,
-        download: Bool = true
+        download: Bool = true,
+        deviceVersion: Int? = 17
     ) async throws {
         self.modelCompute = computeOptions ?? ModelComputeOptions()
         self.audioProcessor = audioProcessor ?? AudioProcessor()
@@ -73,6 +74,12 @@ public class WhisperKit {
         currentTimings = TranscriptionTimings()
 
         self.modelFolder = URL(fileURLWithPath: modelFolder!)
+        
+        if (deviceVersion! < 17){
+            modelCompute.audioEncoderCompute = .cpuAndGPU
+            modelCompute.textDecoderCompute  = .cpuAndGPU
+        }
+        
         
         print("download is \(download)")
         if let prewarm = prewarm, prewarm {
@@ -127,19 +134,16 @@ public class WhisperKit {
 
         if var audioEncoder = audioEncoder as? WhisperMLModel {
             Logging.debug("Loading audio encoder")
-            print("audioEncoder : x ------------ ")
             try await audioEncoder.loadModel(
                 at: encoderUrl,
                 computeUnits: modelCompute.audioEncoderCompute,
                 prewarmMode: prewarmMode
             )
             print("modelCompute.audioEncoderCompute is \(modelCompute.audioEncoderCompute)")
-            print("audioEncoder : y ------------ ")
             Logging.debug("Loaded audio encoder")
         }
         
 
-        print("888888")
         if var textDecoder = textDecoder as? WhisperMLModel {
             Logging.debug("Loading text decoder")
             try await textDecoder.loadModel(
@@ -150,7 +154,7 @@ public class WhisperKit {
             print("modelCompute.textDecoderCompute is \(modelCompute.textDecoderCompute)")
             Logging.debug("Loaded text decoder")
         }
-        print("999999")
+
         if FileManager.default.fileExists(atPath: decoderPrefillUrl.path) {
             Logging.debug("Loading text decoder prefill data")
             textDecoder.prefillData = TextDecoderContextPrefill()
@@ -161,7 +165,7 @@ public class WhisperKit {
             )
             Logging.debug("Loaded text decoder prefill data")
         }
-        print("10-10-10-10-10-10")
+
         if prewarmMode {
             modelState = .prewarmed
             currentTimings?.modelLoading = CFAbsoluteTimeGetCurrent() - modelLoadStart
@@ -180,7 +184,7 @@ public class WhisperKit {
         } else {
             Logging.error("Could not load tokenizer")
         }
-        print("11-11-11-11-11-11")
+
         modelState = .loaded
 
         currentTimings?.modelLoading = CFAbsoluteTimeGetCurrent() - modelLoadStart
@@ -188,19 +192,6 @@ public class WhisperKit {
         Logging.info("Loaded models for whisper size: \(modelVariant)")
     }
 
-//    public func unloadModels() async {
-//        modelState = .unloading
-//
-//        [featureExtractor, audioEncoder, textDecoder].forEach { model in
-//            if var model = model as? WhisperMLModel {
-//                model.unloadModel()
-//            }
-//        }
-//
-//        modelState = .unloaded
-//
-//        Logging.info("Unloaded all models")
-//    }
 
     public func clearState() {
         audioProcessor.stopRecording()
