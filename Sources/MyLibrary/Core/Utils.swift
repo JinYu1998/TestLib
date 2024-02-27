@@ -273,6 +273,7 @@ func timeit(operation: () -> Void) -> TimeInterval {
 
 func getDownloadsDirectory() -> URL {
     let paths = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)
+    print("getDownloadsDirectory() paths is \(paths)")
     return paths[0]
 }
 

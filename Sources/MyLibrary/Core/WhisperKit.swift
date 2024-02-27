@@ -80,7 +80,6 @@ public class WhisperKit {
             modelCompute.textDecoderCompute  = .cpuAndGPU
         }
         
-        
         print("download is \(download)")
         if let prewarm = prewarm, prewarm {
             Logging.info("Prewarming models...")
@@ -274,7 +273,6 @@ public class WhisperKit {
             Logging.debug("Loaded audio encoder")
         }
         
-
         if var textDecoder = textDecoder as? WhisperMLModel {
             Logging.debug("Loading text decoder")
             try await textDecoder.loadModel(
@@ -298,12 +296,13 @@ public class WhisperKit {
             Logging.debug("Loaded text decoder prefill data")
         }
 
+    
         if prewarmMode {
             modelState = .prewarmed
             currentTimings?.modelLoading = CFAbsoluteTimeGetCurrent() - modelLoadStart
             return
         }
-
+        
         // Check model dimensions to assign appropriate tokenizer
         if let logitsDim = textDecoder.logitsSize,
            let encoderDim = audioEncoder.embedSize
@@ -316,7 +315,7 @@ public class WhisperKit {
         } else {
             Logging.error("Could not load tokenizer")
         }
-
+        
         modelState = .loaded
 
         currentTimings?.modelLoading = CFAbsoluteTimeGetCurrent() - modelLoadStart
