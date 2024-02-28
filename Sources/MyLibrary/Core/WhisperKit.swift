@@ -75,6 +75,7 @@ public class WhisperKit {
 
         self.modelFolder = URL(fileURLWithPath: modelFolder!)
         
+        print(deviceVersion)
         if (deviceVersion! < 17){
             modelCompute.audioEncoderCompute = .cpuAndGPU
             modelCompute.textDecoderCompute  = .cpuAndGPU
@@ -241,6 +242,8 @@ public class WhisperKit {
         let encoderUrl = path.appending(path: "AudioEncoder.mlmodelc")
         let decoderUrl = path.appending(path: "TextDecoder.mlmodelc")
         let decoderPrefillUrl = path.appending(path: "TextDecoderContextPrefill.mlmodelc")
+        
+        print(logmelUrl)
         
         try [logmelUrl, encoderUrl, decoderUrl].forEach {
             if !FileManager.default.fileExists(atPath: $0.path) {

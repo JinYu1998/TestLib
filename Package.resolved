@@ -12,9 +12,10 @@
     {
       "identity" : "swift-transformers",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/huggingface/swift-transformers.git",
+      "location" : "https://github.com/JinYu1998/swift-transformers.git",
       "state" : {
-        "revision" : "564442fba36b0b694d730a62d0593e5f54043b55"
+        "branch" : "main",
+        "revision" : "d6ae40f3bfe6f044ddb74f5c7410f57f1703d662"
       }
     }
   ],
