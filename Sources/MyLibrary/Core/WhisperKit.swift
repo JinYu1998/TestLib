@@ -241,7 +241,7 @@ public class WhisperKit {
 //        let logmelUrl = path.appending(path: "MelSpectrogram.mlmodelc")
 //        let encoderUrl = path.appending(path: "AudioEncoder.mlmodelc")
 //        let decoderUrl = path.appending(path: "TextDecoder.mlmodelc")
-//        let decoderPrefillUrl = path.appending(path: "TextDecoderContextPrefill.mlmodelc")
+        let decoderPrefillUrl = path.appending(path: "TextDecoderContextPrefill.mlmodelc")
         
         guard let logmelUrl = Bundle.main.url(forResource: "MelSpectrogram", withExtension: "mlmodelc", subdirectory:  "Frameworks/App.framework/flutter_assets/assets/Model/openai_whisper-tiny.en"),
               let encoderUrl = Bundle.main.url(forResource: "AudioEncoder", withExtension: "mlmodelc", subdirectory:  "Frameworks/App.framework/flutter_assets/assets/Model/openai_whisper-tiny.en"),
