@@ -238,18 +238,18 @@ public class WhisperKit {
         Logging.debug("Loading models from \(path.path) with prewarmMode: \(prewarmMode)")
         print("Loading models from \(path.path) with prewarmMode: \(prewarmMode)")
         
-//        let logmelUrl = path.appending(path: "MelSpectrogram.mlmodelc")
-//        let encoderUrl = path.appending(path: "AudioEncoder.mlmodelc")
-//        let decoderUrl = path.appending(path: "TextDecoder.mlmodelc")
+        let logmelUrl = path.appending(path: "MelSpectrogram.mlmodelc")
+        let encoderUrl = path.appending(path: "AudioEncoder.mlmodelc")
+        let decoderUrl = path.appending(path: "TextDecoder.mlmodelc")
         let decoderPrefillUrl = path.appending(path: "TextDecoderContextPrefill.mlmodelc")
         
-        guard let logmelUrl = Bundle.main.url(forResource: "MelSpectrogram", withExtension: "mlmodelc", subdirectory:  "Frameworks/App.framework/flutter_assets/assets/Model/openai_whisper-tiny.en"),
-              let encoderUrl = Bundle.main.url(forResource: "AudioEncoder", withExtension: "mlmodelc", subdirectory:  "Frameworks/App.framework/flutter_assets/assets/Model/openai_whisper-tiny.en"),
-              let decoderUrl = Bundle.main.url(forResource: "TextDecoder", withExtension: "mlmodelc", subdirectory:  "Frameworks/App.framework/flutter_assets/assets/Model/openai_whisper-tiny.en")
-        else {
-            // Handle the case where one or more URLs are nil
-            throw WhisperError.modelsUnavailable("One or more model files not found.")
-        }
+//        guard let logmelUrl = Bundle.main.url(forResource: "MelSpectrogram", withExtension: "mlmodelc", subdirectory:  "Frameworks/App.framework/flutter_assets/assets/Model/openai_whisper-tiny.en"),
+//              let encoderUrl = Bundle.main.url(forResource: "AudioEncoder", withExtension: "mlmodelc", subdirectory:  "Frameworks/App.framework/flutter_assets/assets/Model/openai_whisper-tiny.en"),
+//              let decoderUrl = Bundle.main.url(forResource: "TextDecoder", withExtension: "mlmodelc", subdirectory:  "Frameworks/App.framework/flutter_assets/assets/Model/openai_whisper-tiny.en")
+//        else {
+//            // Handle the case where one or more URLs are nil
+//            throw WhisperError.modelsUnavailable("One or more model files not found.")
+//        }
 
         
         try [logmelUrl, encoderUrl, decoderUrl].forEach {
