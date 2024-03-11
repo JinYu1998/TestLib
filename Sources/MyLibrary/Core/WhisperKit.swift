@@ -75,11 +75,11 @@ public class WhisperKit {
 
         self.modelFolder = URL(fileURLWithPath: modelFolder!)
         
-//        print(deviceVersion)
-//        if (deviceVersion! < 17){
-//            modelCompute.audioEncoderCompute = .cpuAndGPU
-//            modelCompute.textDecoderCompute  = .cpuAndGPU
-//        }
+        print(deviceVersion)
+        if (deviceVersion! < 17){
+            modelCompute.audioEncoderCompute = .cpuAndGPU
+            modelCompute.textDecoderCompute  = .cpuAndGPU
+        }
         
         print("download is \(download)")
         if let prewarm = prewarm, prewarm {
