@@ -75,7 +75,7 @@ public class WhisperKit {
 
         self.modelFolder = URL(fileURLWithPath: modelFolder!)
         
-        print(deviceVersion)
+        print(deviceVersion!)
         if (deviceVersion! < 17){
             modelCompute.audioEncoderCompute = .cpuAndGPU
             modelCompute.textDecoderCompute  = .cpuAndGPU

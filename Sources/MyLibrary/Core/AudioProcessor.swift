@@ -141,6 +141,7 @@ public extension AudioProcessing {
 public class AudioProcessor: NSObject, AudioProcessing {
     public var audioEngine: AVAudioEngine?
     public var audioSamples: ContiguousArray<Float> = []
+    public var allAudioSamples: ContiguousArray<Float> = []
     public var audioEnergy: [(rel: Float, avg: Float, max: Float, min: Float)] = []
     public var relativeEnergyWindow: Int = 20
     public var relativeEnergy: [Float] {
@@ -320,6 +321,7 @@ public extension AudioProcessor {
     /// Note: Assumes audio is 16khz mono
     func processBuffer(_ buffer: [Float]) {
         audioSamples.append(contentsOf: buffer)
+        allAudioSamples.append(contentsOf: buffer) 
 
         // Find the lowest average energy of the last 20 buffers ~2 seconds
         let minAvgEnergy = self.audioEnergy.suffix(20).reduce(Float.infinity) { min($0, $1.avg) }
@@ -389,6 +391,7 @@ public extension AudioProcessor {
 
     func startRecordingLive(callback: (([Float]) -> Void)? = nil) throws {
         audioSamples = []
+        allAudioSamples = []
         audioEnergy = []
 
         // TODO: implement selecting input device
