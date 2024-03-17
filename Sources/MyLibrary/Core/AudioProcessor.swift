@@ -323,7 +323,6 @@ public extension AudioProcessor {
     /// Note: Assumes audio is 16khz mono
     func processBuffer(_ buffer: [Float]) {
         audioSamples.append(contentsOf: buffer)
-        allAudioSamples.append(contentsOf: buffer) 
 
         // Find the lowest average energy of the last 20 buffers ~2 seconds
         let minAvgEnergy = self.audioEnergy.suffix(20).reduce(Float.infinity) { min($0, $1.avg) }
@@ -376,6 +375,9 @@ public extension AudioProcessor {
             }
 
             let newBufferArray = Self.convertBufferToArray(buffer: buffer)
+            
+            allAudioSamples.append(contentsOf: newBufferArray)
+            
             self.processBuffer(newBufferArray)
         }
 
