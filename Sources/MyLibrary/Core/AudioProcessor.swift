@@ -33,6 +33,8 @@ public protocol AudioProcessing {
 
     /// Stores the audio samples to be transcribed
     var audioSamples: ContiguousArray<Float> { get }
+    
+    var allAudioSamples: ContiguousArray<Float> { get }
 
     /// Empties the audio samples array, keeping the last `keep` samples
     func purgeAudioSamples(keepingLast keep: Int)
