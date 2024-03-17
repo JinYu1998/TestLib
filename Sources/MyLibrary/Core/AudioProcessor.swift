@@ -418,8 +418,5 @@ public extension AudioProcessor {
         // Stop the audio engine
         audioEngine?.stop()
         audioEngine = nil
-        
-        allAudioSamples = []
-
     }
 }
