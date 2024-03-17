@@ -395,7 +395,6 @@ public extension AudioProcessor {
 
     func startRecordingLive(callback: (([Float]) -> Void)? = nil) throws {
         audioSamples = []
-        allAudioSamples = []
         audioEnergy = []
 
         // TODO: implement selecting input device
@@ -419,5 +418,8 @@ public extension AudioProcessor {
         // Stop the audio engine
         audioEngine?.stop()
         audioEngine = nil
+        
+        allAudioSamples = []
+
     }
 }
