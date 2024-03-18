@@ -34,8 +34,6 @@ public protocol AudioProcessing {
     /// Stores the audio samples to be transcribed
     var audioSamples: ContiguousArray<Float> { get }
     
-    var allAudioSamples: ContiguousArray<Float> { get }
-
     /// Empties the audio samples array, keeping the last `keep` samples
     func purgeAudioSamples(keepingLast keep: Int)
 
@@ -143,7 +141,6 @@ public extension AudioProcessing {
 public class AudioProcessor: NSObject, AudioProcessing {
     public var audioEngine: AVAudioEngine?
     public var audioSamples: ContiguousArray<Float> = []
-    public var allAudioSamples: ContiguousArray<Float> = []
     public var audioEnergy: [(rel: Float, avg: Float, max: Float, min: Float)] = []
     public var relativeEnergyWindow: Int = 20
     public var relativeEnergy: [Float] {
@@ -375,9 +372,7 @@ public extension AudioProcessor {
             }
 
             let newBufferArray = Self.convertBufferToArray(buffer: buffer)
-            
-            allAudioSamples.append(contentsOf: newBufferArray)
-            
+                        
             self.processBuffer(newBufferArray)
         }
 
