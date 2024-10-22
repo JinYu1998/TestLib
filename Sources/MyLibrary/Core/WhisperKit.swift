@@ -80,6 +80,9 @@ public class WhisperKit {
         //     modelCompute.audioEncoderCompute = .cpuAndGPU
         //     modelCompute.textDecoderCompute  = .cpuAndGPU
         // }
+
+        modelCompute.audioEncoderCompute = .cpuAndGPU
+        modelCompute.textDecoderCompute  = .cpuAndGPU
         
         print("download is \(download)")
         if let prewarm = prewarm, prewarm {
