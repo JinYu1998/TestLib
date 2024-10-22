@@ -60,8 +60,8 @@ public class WhisperKit {
         logLevel: Logging.LogLevel = .info,
         prewarm: Bool? = nil,
         load: Bool? = nil,
-        download: Bool = true,
-        deviceVersion: Int? = 17
+        download: Bool = true
+        // deviceVersion: Int? = 17
     ) async throws {
         self.modelCompute = computeOptions ?? ModelComputeOptions()
         self.audioProcessor = audioProcessor ?? AudioProcessor()
@@ -75,11 +75,11 @@ public class WhisperKit {
 
         self.modelFolder = URL(fileURLWithPath: modelFolder!)
         
-        print(deviceVersion!)
-        if (deviceVersion! < 17){
-            modelCompute.audioEncoderCompute = .cpuAndGPU
-            modelCompute.textDecoderCompute  = .cpuAndGPU
-        }
+        // print(deviceVersion!)
+        // if (deviceVersion! < 17){
+        //     modelCompute.audioEncoderCompute = .cpuAndGPU
+        //     modelCompute.textDecoderCompute  = .cpuAndGPU
+        // }
         
         print("download is \(download)")
         if let prewarm = prewarm, prewarm {
